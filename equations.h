@@ -32,6 +32,7 @@ typedef struct
 	float*  X_Vec;
 };
 
-int initEq();
-void setXYZ(char* number, char* prom);
+int initEq(Equation* eq);
+void setXYZ(Equation* eq,char* number, char* prom);
+int findProm(char* prom);
 #endif /* EQUATIONS_H_ */
