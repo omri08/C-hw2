@@ -11,8 +11,8 @@
 typedef struct
 {
 	int count;
-	int float* A; // coefficients of x,y,z (int that order)
-	int float B; // the free number on the right side
+	float* A; // coefficients of x,y,z (int that order)
+    float B; // the free number on the right side
 }Equation;
 
 
@@ -31,4 +31,7 @@ typedef struct
 	float   Detrmin;
 	float*  X_Vec;
 };
+
+int initEq();
+void setXYZ(char* number, char* prom);
 #endif /* EQUATIONS_H_ */
