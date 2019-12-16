@@ -2,7 +2,7 @@
  * equations.h
  *
  *  Created on: 14 Dec 2019
- *      Author: omri
+ *      Author: Omri
  */
 
 #ifndef EQUATIONS_H_
