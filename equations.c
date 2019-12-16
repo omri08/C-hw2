@@ -10,32 +10,34 @@
 #include "stringsFuncs.h"
 #include "equations.h"
 
-void setXYZ(Equation* eq,char* number, char* prom)
-{
-	if(prom == NULL)
-		printf("Free number is: %s", number);
-	else
-	{
-	int temp = findProm(prom);
-	printf("%s-%s-%d\n", number,prom,temp);
+void setXYZ(Equation *eq, char *stringNumber, char *prom) {
+	float fNumber;
+	float freeNumber;
+	if (prom == NULL) {
+		freeNumber = atof(stringNumber);
+		eq->B = freeNumber;
+	} else {
+		int index = findProm(prom);
+
+		fNumber = atof(stringNumber);
+		eq->A[index] = fNumber;
 
 	}
 
-
 }
 
-int findProm(char* prom)
-{
-	char x[2];
-	char y[2];
+int findProm(char *prom) {
+	char *x;
+	x = (char*) malloc(2 * sizeof(char));
+	char *y;
+	y = (char*) malloc(2 * sizeof(char));
 	*x = 'x';
 	*y = 'y';
-    printf("\n%s\n",prom);
-
-    printf("\n%s\n",x);
-	int checkX = strcmp(prom,x);
-	int checkY = strcmp(prom,y);
-	if(checkX == 0)
+	int checkX = strcmp(prom, x);
+	int checkY = strcmp(prom, y);
+	free(x);
+	free(y);
+	if (checkX == 0)
 		return 0;
 	else if (checkY == 0)
 		return 1;
@@ -43,27 +45,50 @@ int findProm(char* prom)
 		return 2;
 }
 
-int initEq(Equation* eq)
-{
-	char* str;
+int initEq(Equation *eq) {
+	char *str;
+
 	str = createDynStr("Equation");
-	if(!str)
+	if (!str)
 		return 0;
-	char* token = "* +  = ";
-	char* number;
-	char* prom;
-	number = strtok(str,token);
-	prom = strtok(NULL,token);
 
-	while(number)
-	{
+	eq->A = (float*) malloc(sizeof(float) * 3);
 
-		setXYZ(eq,number,prom);
-		number = strtok(NULL,token);
-		prom = strtok(NULL,token);
+	char *token = "* +=";
+	char *neg = "-";
+	char *number;
+	char *prom;
+	int skip = 0;
+	number = strtok(str, token);
+	prom = strtok(NULL, token);
+	int checkNeg;
+
+	while (number) {
+
+		if (skip != 1)
+			setXYZ(eq, number, prom);
+		skip = 0;
+		number = strtok(NULL, token);
+		if (number != NULL)
+			checkNeg = strcmp(number, neg);
+
+		if (checkNeg == 0) {
+			char temp[50] = "";
+			number = strtok(NULL, token);
+			strcat(temp, neg);
+			strcat(temp, number);
+			prom = strtok(NULL, token);
+			skip = 1;
+			setXYZ(eq, temp, prom);
+		}
+		if (skip != 1)
+			prom = strtok(NULL, token);
 
 	}
 
+	printf(" X  : %0.3f \n Y  : %0.3f \n Z  : %0.3f \n B  : %0.3f \n", eq->A[0],
+			eq->A[1], eq->A[2], eq->B);
 
+	return 1;
 
 }
