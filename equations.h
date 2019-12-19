@@ -21,7 +21,7 @@ typedef struct
 	int count; // number of equations
 	Equation** eqArr; // all equations
 
-}AllEuations;
+}AllEquation;
 
 typedef struct
 {
@@ -30,9 +30,20 @@ typedef struct
 	float*  B_VEC;
 	float   Detrmin;
 	float*  X_Vec;
-};
+}Solver;
 
+//single equation
 int initEq(Equation* eq);
 void setXYZ(Equation* eq,char* number, char* prom);
+void printEq(const Equation* eq);
+
+// all equation
 int findProm(char* prom);
+int initAll(AllEquation* allEq);
+
+// solver/matrix
+int initSolver(Solver* sol);
+void initMatrix(float** mat,AllEquation* allEq);
+void printMatrix(const float** mat, int size);
+
 #endif /* EQUATIONS_H_ */
