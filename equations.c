@@ -10,36 +10,28 @@
 #include "stringsFuncs.h"
 #include "equations.h"
 
-void setXYZ(Equation *eq, char *stringNumber, char *prom) {
-	float fNumber;
-	float freeNumber;
-	if (prom == NULL) {
-		freeNumber = atof(stringNumber);
-		eq->B = freeNumber;
+void setXYZ(Equation *eq, int number, char prom,int minus) {
+//10*x-3*y-3*z=3
+	if (prom == 'f') {
+        if(minus == 1)
+        	number*=-1;
+		    eq->B = number;
 	} else {
 		int index = findProm(prom);
 		eq->count++;
-		fNumber = atof(stringNumber);
-		eq->A[index] = fNumber;
+		if(minus == 1)
+			number*=(-1);
+		eq->A[index] = number;
 
 	}
 
 }
 
-int findProm(char *prom) {
-	char x[2];
-	x[0] = 'x';
-	x[1] = '\0';
-	char y[2];
-	y[0] = 'y';
-	y[1] = '\0';
+int findProm(char prom) {
 
-	int checkX = strcmp(prom, x);
-	int checkY = strcmp(prom, y);
-
-	if (checkX == 0)
+	if (prom == 'x')
 		return 0;
-	else if (checkY == 0)
+	else if (prom == 'y')
 		return 1;
 	else
 		return 2;
@@ -49,48 +41,47 @@ int initEq(Equation *eq) {
 	char *str;
 	eq->count = 0;
 	str = createDynStr("Equation");
+	char neg = '-';
+	int minus = 0;
 	if (!str)
 		return 0;
-
+	// 10*x-3*y-3*z=3;
 	eq->A = (float*) malloc(sizeof(float) * 3);
+	for(int i = 0 ; i < strlen(str) ; i ++)
+	{
+		int counter = 1;
+		int number = 0;
+		char prom = 'f';
+	   	minus = 0;
+	   	if(str[i] == neg) {
+	   		minus = 1;
+	   		i++;
+	   	}
+	   	while(isdigit(str[i]))
+	   	{
+	   		float temp = str[i] - '0';
+	   		number = number*counter + temp;
+	   		counter*=10;
+	   		i++;
+	   	}
+	 	if(str[i] == neg) {
+		   		minus = 1;
+		   		i++;
+		   	}
+	   	if(str[i] == '*') {
+	   		i++;
+	   		prom = str[i];
+	   	}
+        if(str[i] == '=' || str[i] == '+')
+        	continue;
 
-	char *token = "*+=";
-	char *neg = "-";
-	char *number;
-	char *prom;
-	int skip = 0;
-	number = strtok(str, token);
-	prom = strtok(NULL, token);
-	int checkNeg;
-
-	while (number) {
-
-		if (skip != 1)
-			setXYZ(eq, number, prom);
-		skip = 0;
-		number = strtok(NULL, token);
-		if (number != NULL)
-			checkNeg = strcmp(number, neg);
-
-		if (checkNeg == 0) {
-			char temp[50] = "";
-			number = strtok(NULL, token);
-			strcat(temp, neg);
-			strcat(temp, number);
-			prom = strtok(NULL, token);
-			skip = 1;
-			setXYZ(eq, temp, prom);
-		}
-		if (skip != 1)
-			prom = strtok(NULL, token);
+	   	setXYZ(eq,number,prom,minus);
 
 	}
-
-	if (eq->count == 0 && eq->B != 0) // invalid equation
+	if(eq->B !=0 && eq->count == 0)
 		return 0;
-	else
-		return 1;
 
+ return 1;
 }
 
 void printEq(const Equation *eq) {
@@ -104,6 +95,7 @@ int initAll(AllEquation *allEq) {
 	int numEq;
 	printf("Enter number of equations(1-3)\n");
 	scanf("%d", &numEq);
+	allEq->count = numEq;
 	while ((getchar()) != '\n')
 		; // to clean the buffer
 
@@ -124,21 +116,25 @@ int initAll(AllEquation *allEq) {
 	return 1;
 }
 
-void initMatrix(float **mat, AllEquation *allEq) {
+int initMatrix(float **mat, AllEquation *allEq) {
+	int cols;
+	cols = allEq->eqArr[0]->count;
 	for (int i = 0; i < allEq->count; i++) {
-		for (int j = 0; j < allEq->count; j++) {
-			mat[i][j] = allEq->eqArr[i]->A[j];
+		mat[i] = (float*)malloc(sizeof(float)*allEq->eqArr[i]->count);
+		for (int j = 0; j < allEq->eqArr[i]->count; j++) {
 
+            mat[i][j] = allEq->eqArr[i]->A[j];
 		}
 		free(allEq->eqArr[i]->A);
 		free(allEq->eqArr[i]);
 	}
+	return cols;
 }
 
-void printMatrix(const float **mat, int size) {
+void printMatrix(const float** mat,int rows, int cols) {
 	printf("-----------printing matrix------\n");
-	for (int i = 0; i < size; i++) {
-		for (int j = 0; j < size; j++)
+	for (int i = 0; i < rows; i++) {
+		for (int j = 0; j < cols; j++)
 			printf(" %0.3f ", mat[i][j]);
 		printf("\n");
 	}
@@ -163,10 +159,9 @@ int initSolver(Solver *sol) {
 		return 0;
 	}
 
-	for (int i = 0; i < sol->count; i++)
-		sol->A_Mat[i] = (float*) malloc(sol->count * sizeof(float));
 
-	printMatrix(sol->A_Mat, sol->count);
+	int cols = initMatrix(sol->A_Mat,allEq);
+	printMatrix(sol->A_Mat, sol->count,cols);
 	return 1;
 }
 

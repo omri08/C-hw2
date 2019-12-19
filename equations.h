@@ -34,16 +34,16 @@ typedef struct
 
 //single equation
 int initEq(Equation* eq);
-void setXYZ(Equation* eq,char* number, char* prom);
+void setXYZ(Equation* eq, int number, char prom,int minus);
 void printEq(const Equation* eq);
-
+int findProm(char prom);
 // all equation
-int findProm(char* prom);
+
 int initAll(AllEquation* allEq);
 
 // solver/matrix
 int initSolver(Solver* sol);
-void initMatrix(float** mat,AllEquation* allEq);
-void printMatrix(const float** mat, int size);
+int initMatrix(float** mat,AllEquation* allEq);
+void printMatrix(const float** mat,int rows, int cols);
 
 #endif /* EQUATIONS_H_ */
