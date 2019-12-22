@@ -43,13 +43,11 @@ int initEq(Equation *eq) {
 	int minus = 0;
 	if (!str)
 		return 0;
-	//-1.2*x+95.85*y-123.456*z=3
-	//Enter Equation
-	//-1.1*x+2.2*y-3.3*z=3
-	//Enter Equation
-	//95.85*x-1.23*y+78*z=3
+	//1*x+1*y+1*z=6
+	//0*x+2*y+5*z=-4
+	//2*x+5*y-1*z=27
 	eq->A = (float*) malloc(sizeof(float) * 3);
-	for(int i = 0 ; i < eq->count ; i ++)
+	for (int i = 0; i < eq->count; i++)
 		eq->A[i] = 0;
 	for (int i = 0; i < strlen(str); i++) {
 
@@ -62,21 +60,20 @@ int initEq(Equation *eq) {
 			i++;
 		}
 		while (isdigit(str[i]) || str[i] == '.') {
-			if(str[i] == '.')
-			{
-			 position++;
-			 i++;
+			if (str[i] == '.') {
+				position++;
+				i++;
 			} else {
-			if(position >0)
-             position++;
-			float temp = str[i] - '0';
-			number = number * 10 + temp;
-			i++;
+				if (position > 0)
+					position++;
+				float temp = str[i] - '0';
+				number = number * 10 + temp;
+				i++;
 			}
 
 		}
-		while(position-1 > 0) {
-			number/=10;
+		while (position - 1 > 0) {
+			number /= 10;
 			position--;
 		}
 		if (str[i] == neg) {
@@ -155,39 +152,91 @@ void printMatrix(const float **mat, int rows, int cols) {
 	}
 }
 
-int det(Solver *sol, int rows, int cols) {
-	float temp;
-	float **a = sol->A_Mat;
+float det(float **mat, int rows, int cols) {
+
+	float det;
 	if (rows != cols)
 		return -1;
 	if (rows == 1 && cols == 1) {
-		sol->Detrmin = sol->A_Mat[0][0];
-		return 1;
+		det = mat[0][0];
+		return det;
 	}
 	if (rows == 2 && cols == 2) {
-		sol->Detrmin = sol->A_Mat[0][0] * sol->A_Mat[1][1]
-				- sol->A_Mat[1][0] * sol->A_Mat[0][1];
-		return 1;
+		det = mat[0][0] * mat[1][1]- mat[1][0] * mat[0][1];
+		return det;
 	}
 	if (rows == 3 && cols == 3) {
-		float  r1 = a[0][0] * ((a[1][1] * a[2][2])
-		    - (a[2][1] * a[1][2]));
 
-		   float r2 = a[0][1] * ((a[1][0] * a[2][2])
-		    - (a[2][0] * a[1][2]));
+		for (int i = 0; i < 3; i++)
+			det = det
+					+ (mat[0][i]
+							* (mat[1][(i + 1) % 3]
+									* mat[2][(i + 2) % 3]
+									- mat[1][(i + 2) % 3]
+											* mat[2][(i + 1) % 3]));
 
-		    float r3 = a[0][2] * ((a[1][0] * a[2][1])
-		    - (a[2][0] * a[1][1]));
 
-		 float    detval= r1 - r2 + r3;
-
-		sol->Detrmin = detval;
-		return 1;
+		return det;
 	}
 	return -1;
 
 }
 
+int solve(Solver *sol, float **a, float originalDet, int rows, int cols) {
+
+		float **temp;
+		temp = (float**) malloc(sizeof(float*) * rows);
+	    // coping by value
+		for(int i = 0 ; i < rows ; i ++){
+			temp[i] = (float*)malloc(sizeof(float)*rows);
+			for(int j = 0 ; j < rows ; j ++) {
+				temp[i][j] = a[i][j];
+			}
+		}
+
+		sol->X_Vec = (float*)malloc(sizeof(float)*rows);
+		// using cramer
+		for(int i = 0 ; i < rows ; i ++) {
+			for(int j = 0 ; j < rows ; j++){
+				temp[j][i] = sol->B_VEC[j];
+			}
+			float tempD = det(temp,rows,cols);
+			sol->X_Vec[i] = tempD  / originalDet;
+
+			// go back to the original
+			for(int k = 0 ; k < rows ; k ++ )
+				temp[k][i] = a[k][i];
+
+
+		}
+
+
+      // relase all
+		for(int i = 0; i < rows ; i ++){
+		   free(temp[i]);
+		}
+		free(temp);
+
+
+	return 1;
+}
+
+void initB(Solver *sol, AllEquation *allEq) {
+	sol->B_VEC = (float*) malloc(allEq->count * sizeof(float));
+	for (int i = 0; i < allEq->count; i++) {
+		sol->B_VEC[i] = allEq->eqArr[i]->B;
+	}
+}
+
+
+void freeSol(Solver* sol){
+	free(sol->B_VEC);
+	free(sol->X_Vec);
+	for(int i = 0 ; i < sol->count ; i ++) {
+		free(sol->A_Mat[i]);
+	}
+	free(sol->A_Mat);
+}
 int initSolver(Solver *sol) {
 	AllEquation *allEq;
 	allEq = (AllEquation*) malloc(sizeof(AllEquation));
@@ -206,12 +255,39 @@ int initSolver(Solver *sol) {
 		free(allEq);
 		return 0;
 	}
+	initB(sol, allEq);
+
 
 	int cols = initMatrix(sol->A_Mat, allEq);
-	printMatrix(sol->A_Mat, sol->count, cols);
-	if(det(sol,sol->count,cols) == 1)
-		printf("The det is: %0.3f",sol->Detrmin);
 
+	printMatrix(sol->A_Mat, sol->count, cols);
+
+	printf("\nB vector is:\n");
+    for(int i = 0 ; i < cols ; i ++)
+    	printf("%0.3f\n",sol->B_VEC[i]);
+
+	sol->Detrmin = det(sol->A_Mat,sol->count,cols);
+    printf("The detrmin is: %0.3f\n",sol->Detrmin);
+	// solve the equation
+	if(sol->Detrmin != 0 && sol->Detrmin != -1 ) {
+		solve(sol, sol->A_Mat, sol->Detrmin, sol->count, cols);
+
+		// print the equation
+      for(int i = 0 ; i < cols ; i ++) {
+    	  if(i == 0)
+    		  printf("X = %0.3f\n",sol->X_Vec[i]);
+    	  if(i == 1)
+    		  printf("Y = %0.3f\n",sol->X_Vec[i]);
+    	  if(i == 2)
+    	  printf("Z = %0.3f\n",sol->X_Vec[i]);
+
+      }
+	} else {
+     printf("Sorry, det is 0");
+     return -1;
+	}
+
+   freeSol(sol);
 	return 1;
 }
 
