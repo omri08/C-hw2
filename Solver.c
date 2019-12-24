@@ -1,133 +1,21 @@
 /*
- * equations.c
+ * Solver.c
  *
- *  Created on: 14 Dec 2019
- *      Author: omri
+ *  Created on: Dec 24, 2019
+ *      Author: afeka
  */
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "stringsFuncs.h"
-#include "equations.h"
+#include "Solver.h"
 
-void setXYZ(Equation *eq, float number, char prom, int minus) {
-//10*x-3*y-3*z=3
-	if (prom == 'f') {
-		if (minus == 1)
-			number *= -1;
-		eq->B = number;
-	} else {
-		int index = findProm(prom);
-		if (minus == 1)
-			number *= (-1);
-		eq->A[index] = number;
 
-	}
 
-}
-
-int findProm(char prom) {
-
-	if (prom == 'x')
-		return 0;
-	else if (prom == 'y')
-		return 1;
-	else
-		return 2;
-}
-
-int initEq(Equation *eq) {
-	char *str;
-	str = createDynStr("Equation");
-	char neg = '-';
-	int minus = 0;
-	if (!str)
-		return 0;
-	//1*x+1*y+1*z=6
-	//0*x+2*y+5*z=-4
-	//2*x+5*y-1*z=27
-	eq->A = (float*) malloc(sizeof(float) * 3);
-	for (int i = 0; i < eq->count; i++)
-		eq->A[i] = 0;
-	for (int i = 0; i < strlen(str); i++) {
-
-		float number = 0;
-		char prom = 'f';
-		int position = 0;
-		minus = 0;
-		if (str[i] == neg) {
-			minus = 1;
-			i++;
-		}
-		while (isdigit(str[i]) || str[i] == '.') {
-			if (str[i] == '.') {
-				position++;
-				i++;
-			} else {
-				if (position > 0)
-					position++;
-				float temp = str[i] - '0';
-				number = number * 10 + temp;
-				i++;
-			}
-
-		}
-		while (position - 1 > 0) {
-			number /= 10;
-			position--;
-		}
-		if (str[i] == neg) {
-			minus = 1;
-			i++;
-		}
-		if (str[i] == '*') {
-			i++;
-			prom = str[i];
-		}
-		if (str[i] == '=' || str[i] == '+')
-			continue;
-
-		setXYZ(eq, number, prom, minus);
-
-	}
-	if (eq->B != 0 && eq->count == 0)
-		return 0;
-
-	return 1;
-}
-
-void printEq(const Equation *eq) {
-	for (int i = 0; i < eq->count; i++) {
-		printf("%0.3f ", eq->A[i]);
-	}
-	printf("\n");
-}
-
-int initAll(AllEquation *allEq) {
-	int numEq;
-	printf("Enter number of equations(1-3)\n");
-	scanf("%d", &numEq);
-	allEq->count = numEq;
-	while ((getchar()) != '\n')
-		; // to clean the buffer
-
-	allEq->eqArr = (Equation**) malloc(numEq * sizeof(Equation*));
-	for (int i = 0; i < numEq; i++) {
-		allEq->eqArr[i] = (Equation*) malloc(sizeof(Equation));
-		allEq->eqArr[i]->count = numEq;
-		if (!allEq->eqArr[i])
-			return 0;
-		if (initEq(allEq->eqArr[i]) == 0) {
-			printf("Invalid equation");
-			free(allEq->eqArr[i]);
-			return 0;
-		}
-
-	}
-
-	return 1;
-}
-
+//1*x+1*y+1*z=6
+//Enter Equation
+//5*z+2*y=-4
+//Enter Equation
+//2*x-1*z+5*y=27
 int initMatrix(float **mat, AllEquation *allEq) {
 	int cols;
 	cols = allEq->eqArr[0]->count;
@@ -152,9 +40,10 @@ void printMatrix(const float **mat, int rows, int cols) {
 	}
 }
 
+
 float det(float **mat, int rows, int cols) {
 
-	float det;
+	float det = 0;
 	if (rows != cols)
 		return -1;
 	if (rows == 1 && cols == 1) {
@@ -204,8 +93,9 @@ int solve(Solver *sol, float **a, float originalDet, int rows, int cols) {
 			sol->X_Vec[i] = tempD  / originalDet;
 
 			// go back to the original
-			for(int k = 0 ; k < rows ; k ++ )
+			for(int k = 0 ; k < rows ; k ++ ){
 				temp[k][i] = a[k][i];
+			}
 
 
 		}
@@ -221,13 +111,14 @@ int solve(Solver *sol, float **a, float originalDet, int rows, int cols) {
 	return 1;
 }
 
+
+
 void initB(Solver *sol, AllEquation *allEq) {
 	sol->B_VEC = (float*) malloc(allEq->count * sizeof(float));
 	for (int i = 0; i < allEq->count; i++) {
 		sol->B_VEC[i] = allEq->eqArr[i]->B;
 	}
 }
-
 
 void freeSol(Solver* sol){
 	free(sol->B_VEC);
@@ -237,6 +128,8 @@ void freeSol(Solver* sol){
 	}
 	free(sol->A_Mat);
 }
+
+
 int initSolver(Solver *sol) {
 	AllEquation *allEq;
 	allEq = (AllEquation*) malloc(sizeof(AllEquation));
@@ -290,4 +183,3 @@ int initSolver(Solver *sol) {
    freeSol(sol);
 	return 1;
 }
-

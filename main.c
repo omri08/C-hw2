@@ -5,8 +5,9 @@
  *      Author: omri
  */
 #include <stdlib.h>
-#include "stringsFuncs.h"
-#include "equations.h"
+
+#include "Solver.h"
+
 
 int main()
 {
